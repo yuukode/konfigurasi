@@ -42,10 +42,82 @@ MODUL A DAY 1
 			#network 192.168.1.0 mask 255.255.255.0 -> jadi kedua router akan bertukan informasi network yang mereka punya
 	- Enable port NAT:
 		-NAT Static:
-			#ip nat inside source static 192.168.1.1 30.10.10.1 -> akan
-===================================belum selesai nat============================
-	- Enable vpn secure with encrypted
-===================================belum selesai vpn============================
+			#ip nat inside source static 192.168.1.1 30.10.10.1 -> akan membuat static nat dari ip private 192.168.1.1 jadi ip public 30.10.10.1
+			#int gi0/0
+			#ip nat outside -> mengarah ke jaringan luar/public
+			#int gi0/1
+			#ip nat inside -> mengarah ke local alias ip address private
+			jadi seakan akan yang terlihat di jaringan public atau internet adalah ip 30.10.10.1 atau ip public sedangkan yang end devices/pc memiliki ip local
+		-NAT Dynamic:
+			#ip nat pool whypool 30.30.30.1 30.30.30.20 net 255.255.255.0 -> membuat list ip public yang akan di nat
+			#ip nat inside source list 1 pool whypool -> membuat nat yang berisi ip di pool whypool
+			#access-list 1 permit 192.168.10.0 0.0.0.255 -> membuat access-list untuk permit(mengizinkan) ip local tersebut untuk di nat.
+			jadi ketika ada client yang terhubung ke router otomatis akan diberi nat ip public sesuai yang ada di list.
+		-NAT Overload:
+			#access-list 1 permit any -> membuat access list untuk mengizinkan semua ip, jika untuk spesifik any dapat diganti dengan network ip dan wildcard
+			#ip nat inside source list 1 interface fa0/1 overload -> membuat nat yang ada di access list 1 yang sudah di buat agar di nat secara overload di interface fa0/1, jadi 1 ip public dapat digunakan banyak ip private
+			#int fa0/0
+			#ip nat inside
+			#int fa0/1
+			#ip nat outside
+	- Enable vpn secure with encrypted, misal R1 memiliki ip public 1.1.1.1 di interface fa0/1 dan R2 memiliki ip public 1.1.1.2 di interface fa0/1
+	  dan lokal ip R1 adalah 10.10.10.0/24 dan lokal ip R2 adalah 20.20.20.0/24, berikut script untuk membuat vpn dengan enkripsi:
+		-isakmp policy (R1):
+			#crypto isakmp policy 1
+			#encr 3des
+			#hash md5
+			#authentication pre-share
+			#group 2
+			#lifetime 86400
+		-membuat pre shared key untuk auth (R1):
+			#crypto isakmp key whykey address 1.1.1.2 -> diisi dengan ip peer nya yaitu ip R2
+		-konfigurasi ipsec:
+			-buat acl extended(R1):
+				#ip access-list extended VPN-TRAFIC
+				#permit ip 10.10.10.0 0.0.0.255 20.20.20.0 0.0.0.255
+			-buat ipsec transform(R1):
+				#crypto ipsec transform-set TS esp-3des esp-md5-hmac
+			-buat crypto map(R1):
+				#crypto map CMAP 10 ipsec-isakmp
+				#set peer 1.1.1.2
+				#set transform-set TS
+				#match address VPN-TRAFIC
+			-aktifkan crypto map ke interface public(R1):
+				#int fa0/1
+				#crypto map CMAP
+		-untuk R2 samakan seperti di atas, lebih jelasnya di bawah ini(R2):
+			#crypto isakmp policy 1
+			#encr 3des
+			#hash md5
+			#authectication pre-share
+			#group 2
+			#lifetime 86400
+			
+			#crypto isakmp key whykey address 1.1.1.1 -> ip R1
+			#ip access-list extended VPN-TRAFIC
+			#permit ip 20.20.20.0 0.0.0.255 10.10.10.0 0.0.0.255 -> bisa dilihat perbedaannya sama di atas
+			
+			#crypto ipsec transform-set TS esp-3des esp-md5-hmac
+			#crypto map CMAP 10 ipsec-isakmp
+			#set peer 1.1.1.1
+			#set transform-set TS
+			#match address VPN-TRAFIC
+			
+			#int fa0/1
+			#crypto map CMAP
+
+		-lalu buat nat(R1):
+			#ip nat inside source list 100 int fa0/1 overload
+			#access-list 100 remark "NAT Service"
+			#access-list 100 deny ip 10.10.10.0 0.0.0.255 20.20.20.0 0.0.0.255
+			#access-list 100 permit ip 10.10.10.0 0.0.0.255 any
+			#access-list 100 remark
+		-nat (R2):
+			#ip nat inside source list 100 int fa0/1 overload
+			#access-list 100 remark "NAT Service"
+			#access-list 100 deny ip 20.20.20.0 0.0.0.255 10.10.10.0 0.0.0.255
+			#access-list 100 permit ip 20.20.20.0 0.0.0.255 any
+			#access-list 100 remark
 	- Configure vlan:
 		#vlan 10 -> mengaktifkan vlan 10
 		#name management -> memberi nama vlan 10 dengan nama management(nama terserah)
@@ -55,7 +127,16 @@ MODUL A DAY 1
 	- Configure trunk vlan:
 		#int gig0/4 -> untuk masuk ke interface yang akan dijadikan trunk
 		#switchport mode trunk
-==================================belum selesai vtp sekalian=====================
+	- configure subinterface:
+		#int gi0/0
+		#no sh
+		#int gi0/0.10
+		#encapsulation dot1q 10 -> membuat sub interface vlan 10
+		#ip add 192.168.10.1 255.255.255.0
+		#int gi0/0.20
+		#encapsulation dot1q 20 -> membuat subinterface vlan 20
+		#ip add 192.168.20.1 255.255.255.0
+		jadi dapat membuat 2 ip address dalam 1 interface yang terhubung ke port trunk vlan.
 - LINUX SERVICES
 	- Configure ip address(static):
 		#nano /etc/network/interfaces
@@ -163,7 +244,7 @@ MODUL A DAY 1
 			#apt-get install haproxy
 		- configure haproxy:
 			#nano /etc/haproxy/haproxy.cfg
-			tambahkan dibawah
+			tambahkan dib awah
 			#listen stats			->	konfigurasi stats/status load balance
 			#	bind *:80 			->	menggunakan port 80
 			#	stats enable		->	mengaktifkan stats/status load balance(defaultnya disable)
@@ -246,4 +327,20 @@ MODUL A DAY 1
 			#iscsiadm -m discovery -t sendtargets -p ipiscsitarget -> untuk melihat nama target di ip address target
 			#iscsiadm -m node -T iqn.2022-05.sabang.net:tgt2 -l
 	- Configure dhcp server:
-=====================================perlu pancingan============================
+		-buka file konfigurasi dhcp di /etc/dhcp/dhcpd.conf
+		-hapus tanda pagar pada script:
+			#subnet 10.10.10.0 netmask 255.255.255.0 { -> sekalian diganti network dan netmask sesuai keperluan ip address
+			#	range 10.10.10.2 10.10.10.25; -> range terserah
+			#	option domain-name-servers 192.168.1.2, 8.8.8.8; -> untuk dns server yang akan digunakan
+			#	option domain-name "www.sabang.net";
+			#	option routers 10.10.10.1; -> ini akan digunakan gateway bagi dhcp client
+			#	option broadcast-address 10.10.10.255; -> broadcast ip
+			#	default-lease-time 600;
+			#	max-lease-time 7200;
+			#}
+		-untuk dhcp static( agar mendapatkan ip yang sama untuk device spesifik), cari script berikut hapus tanda pagar dan ubah sesuai intruksi di bawah:
+			#host ubuntu { -> sesuaikan nama host client
+			#	hardware ethernet 00:0c:29:3b:f3:22; ->sesuaikan dengan mac address device client
+			#	fixed-address 10.10.10.244; - memberikan ip secara static ke dhcp client
+			#}
+		-simpan dan keluar, lalu restart service isc-dhcp server.
