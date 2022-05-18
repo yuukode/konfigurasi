@@ -31,6 +31,12 @@ MODUL A DAY 1
 			#permit ip any any -> untuk mengizinkan semua ip agar dapat mengakses, perintah ini harus di akhir,kenapa? karena cisco mengeksekusi perintah dari atas ke bawah, jadi perintah tadi memerintahkan agar cisco menolak permintaan port 22, lalu mengizinkan semua ip mengakses kalau tidak diberikan ini nanti semua ip ditolak untuk mengakses semua port
 			#line vty 0 15
 			#access-class portsshdefault in -> memasang access list dengan nama portsshdefault dengan perintah in, maksudnya acl(access list) akan dieksekusi ketika ada permintaan masuk(inbound)
+		- jika tidak bisa remote ssh di debian, lakukan ini di debian:
+			#nano ~/.ssh/config
+			tambahkan di bawah:
+			Host 123.123.123.123->ip cisco
+			    KexAlgorithms +diffie-hellman-group1-sha1
+			simpan dan keluar lalu restart ssh.
 	- Configure Dynamic Routing Border Gateway Protocol(BGP):
 		-Cisco1:
 			#router bgp 1 -> untuk mengaktifkan bgp dengan autonomous number 1
@@ -118,6 +124,8 @@ MODUL A DAY 1
 			#access-list 100 deny ip 20.20.20.0 0.0.0.255 10.10.10.0 0.0.0.255
 			#access-list 100 permit ip 20.20.20.0 0.0.0.255 any
 			#access-list 100 remark
+		-cara cek:
+			#sh cry session
 	- Configure vlan:
 		#vlan 10 -> mengaktifkan vlan 10
 		#name management -> memberi nama vlan 10 dengan nama management(nama terserah)
@@ -315,7 +323,7 @@ MODUL A DAY 1
 		- iscsi target debian configuration:
 			#pvcreate /dev/sd{b,c,sampai selesai sesuai kebutuhan}						
 			#vgcreate nama_group_volume_terserah /dev/sd{b,c,sampai selesai sama seperti diatas}	-> membuat group
-			#lvcreate -l 100#FREE -n nama_logikal_volume terserah nama_group_volume
+			#lvcreate -l 100#FREE -n nama_logikal_volume_terserah nama_group_volume
 			
 			#nano /etc/tgt/targets.conf
 			#<target iqn.2022-05.sabang.net:tgt2>

@@ -1,0 +1,17 @@
+DAY 2 - LINUX SERVICES
+	-Folder Backup
+		-backup 100 users folder di file sharing windows
+		-mount file sharing windows di linux dengan cara:
+			#apt-get install cifs-utils
+			#mkdir -r /backup/srv1
+			#mount.cifs //10.10.10.2/public /backup/srv1/ -o username=Administrator,password=Skills39
+		-membuat jadwal otomatis backup setiap jam dengan cron:
+			#apt-get install cron
+			#crontab -e
+			tambahkan di paling bawah:
+			0 * * * * cp -r /var/www/user* /backup/srv1
+			simpan dan keluar
+			#crontab -l -> untuk melihat list cron
+	-Email Services
+		-configure secure smpt port 465:
+			#
