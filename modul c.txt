@@ -1,0 +1,59 @@
+modul c - netdevops
+	
+	untuk ubuntu isi password root agar mode cli dapat login sebagai root agar dapat panduan tabss(agar bisa di tab tab, soalnya menggunakan sudo su tidak bisa di tab tab)
+	login user biasa lalu:
+		#sudo su
+		#passwd root
+		#exit
+		#exit
+	lalu login sebagai root
+
+	Install python3 and other required packages to run the code main.py
+		#apt-get install python3
+	
+	 Enable python3 virtual environment and create a new virtual environment on
+	“/opt/env/myenv”
+		○ Install the required packages to run the code in this virtual environment
+			#apt-get install python3-venv python3-virtualenv
+			#python3 -m venv /opt/env/myenv
+	
+	Save the following code in directory “/opt/sample-web"
+		#mkdir /opt/sample-web
+		#nano /opt/sample-web/main.py
+		lalu isikan:
+		from flask import Flask
+		from flask import request
+		from flask import render_template
+
+		sample = Flask(__name__,template_folder='/opt/sample-web/')--> harus diisi agar jinja2 dapat mencari file html kalau tidak internal error
+		@sample.route("/") untuk alias misal ("/webku") #maka akan di akses dari url http://ipadd_atau_domain/webku
+		def main():
+			return render_template("index.html")
+
+			if __name__== "__main__":
+				sample.run(host="0.0.0.0",port=8080) #belum tau gunanya soalnya ketika dijalankan portnya tidak berubah, harus manual
+		simpan dan keluar
+		#nano /opt/sample-web/index.html
+		lalu isikan:
+		<html>
+		<head>
+			<title>Sample app</title>
+		</head>
+		<body>
+			<h1> You are calling me from {{request.remote_addr}}</h1>
+		</body>
+		</html>
+		simpan dan keluar
+	 Make sure the code can be executed in the server without any trouble
+		masuk ke env python:
+			#source /opt/env/myenv/bin/activate
+			#pip3 install flask
+			#export FLASK_APP=/opt/sample-web/main.py --> kalau di linux export kalau di windows set
+			#flask run -p 80 --> dapat diubah sesuka hati ingin port berapa
+		lalu akses di browser dengan ip atau domain.
+
+	Configure Docker in the development server, make sure user ‘patah’ can use docker
+	command without sudo
+		#sudo groupadd docker
+		#sudo gpasswd -a $USER docker
+		#newgrp docker
