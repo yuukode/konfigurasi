@@ -58,5 +58,3 @@ DAY 2 - LINUX SERVICES
 			#openssl pkcs12 -export -out web.pfx -inkey web.key -in web.crt --> diimport di windows server webservice
 
 
-LKS
-2022
