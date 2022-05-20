@@ -13,24 +13,50 @@ DAY 2 - LINUX SERVICES
 			simpan dan keluar
 			#crontab -l -> untuk melihat list cron
 	-Email Services
+		-configure send-only:
+			#apt-get install postfix mailutils
+			internet site,nama domain/subdomain
+			#nano /etc/postfix/main.cf
+			ganti jadi inet_interfaces = loopback-only
 		-configure secure smpt port 465:
-			#
+			#mkdir /cert
+			#mkdir /cert/rootca
+			#mkdir /cert/postfix
+			#cd /cert/rootca
+			#openssl genrsa -des3 -out rootca.key 2048
+			#openssl req -x509 -new -nodes -key rootca.key -sha256 -days 365 -out rootca.pem
+			#cd ../postfix
+			#openssl genrsa -out postfix.key 2048
+			#openssl req -new -key postfix.key -out postfix.csr
+			#openssl x509 -req -in postfix.csr -CA ../rootca/rootca.pem -CAkey ../root/rootca.key -CAcreateserial -out postfix.crt -days 365 -sha256
+			#nano /etc/postfix/main.cf
+			ubah smtpd_tls_cert_file= arahkan ke file crt yang dibuat contoh /cert/postfix/postfix.crt
+			ubah smtpd_tls_key_file= arahkan ke file key yang dibuat contoh /cert/postfix/postfix.key
+			simpan dan keluar
+			#nano /etc/postfix/master.cf
+			ubah smtpd jadi 465 lalu simpan dan keluar
+			#service postfix restart
+			#nmap localhost -> nanti muncul smtps port 465
+	ssl https green: 
+		#openssl genrsa -des3 -out rootca.key 2048
+		#openssl req -x509 -new -nodes -key rootca.key -sha256 -days 365 -out rootca.pem --> di pasang di web browser linux/windows
+		#openssl crl2pkcs7 -nocrl -cerfile rootca.pem -out rootca.p7b --> di pasang di trusted root windows
+		#openssl genrsa -out web.key 2048
+		#openssl req -new -key web.key -out web.csr
+		#nano config.ext
+			authorityKeyIdentifier=keyid,issuer
+			basicConstraints=CA:FALSE
+			keyUsage= digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+			subjectAltName = @alt_names
+			[alt_names]
+			DNS.1 = why.net
+			DNS.2 = www.why.net
+			untuk v3 bagian subjectAltName = DNS.1:www.why.net, DNS.2:why.net
+		#openssl x509 -req -in web.csr -CA rootca.pem -CAkey rootca.key -CAcreateserial -out web.crt -days 365 -sha265 -extfile config.ext
+		file crt dan key di isikan di vhost web server
+		convert to pfx(crt dan key jadi satu file pfx):
+			#openssl pkcs12 -export -out web.pfx -inkey web.key -in web.crt --> diimport di windows server webservice
 
-ssl https green: 
-	openssl genrsa -des3 -out rootca.key 2048
-	openssl req -x509 -new -nodes -key rootca.key -sha256 -day 365 -out rootca.pem
-	openssl crl2pkcs7 -nocrl -cerfile rootca.pem -out rootca.p7b
-	openssl genrsa -out web.key 2048
-	openssl req -net -key web.key -out web.csr
-	nano config.ext
-		authorityKeyIdentifier=keyid,issuer
-		basicConstraints=CA:FALSE
-		keyUsage= digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
-		subjectAltName = alt_names
-		[alt_names]
-		DNS.1 = why.net
-		DNS.2 = www.why.net
-	openssl x509 -req -in web.csr -CA rootca.pem -CAkey rootca.key -CAcreateserial -out web.crt -days 365 -sha265 -extfile config.ext
 
-convert to pfx(crt dan key jadi satu file pfx):
-	openssl pkcs12 -export -out web.pfx -inkey web.key -in web.crt
+LKS
+2022

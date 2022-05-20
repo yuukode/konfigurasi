@@ -1,0 +1,83 @@
+MODUL B - NETWORK SYSTEMS
+
+	Check & Configure IP Address according to topology and addressing table
+		○ All host and network device must be configured IP including sub-interface and
+			Native VLAN
+			configure ip address
+				#int gig0/1
+				#no sh --> wajib untuk router harus di aktifkan dulu
+				#ip add 192.168.1.1 255.255.255.252 --> ip address dan netmask
+			configure ip addresss sub interface untuk vlan
+				#int gig0/1
+				#no sh
+				#int gig0/1.10 --> jika vlan 10
+				#encapsulation dot1Q 10
+				#ip add 192.168.10.1 255.255.255.252
+		○ Make sure all switch configured IP Address in the interface VLAN 99 including
+			Switch Layer 3
+				#vlan 99
+				#name Management
+				#int vlan 99
+				#ip add 192.168.99.2 255.255.255.0
+				#ip routing --> untuk mengaktifkan layer 3 di multilayer switch
+				#ip route 0.0.0.0 0.0.0.0 192.168.99.1 --> memberi gateway
+		○ All hosts must be access webiste itnsa.id with IP DNS 3.3.3.3
+				jangan lupa routing router yang ada di network 3.3.3.3
+
+	Make sure configuration S1, S2 and S3
+		○ VLAN Configuration
+			membuat vlan:
+				#vlan 91
+				#name Manager
+			memasukkan interface kedalam vlan
+				satu persatu hanya fa0/1 dan fa0/18:
+					#int fa0/1
+					#switchport mode access
+					#switchport access vlan 91
+					#int fa0/18
+					#switchport mode access
+					#switchport access vlan 91
+				misal interface fa0/1 sampai fa0/5 bisa sekaligus:
+					#int range fa0/1-5
+					#swithcport mode access
+					#switchport access vlan 91
+			membuat trunk, port trunk untuk dilalui beberapa vlan:
+				trunk di switch cisco:
+					#int fa0/10
+					#switchport mode trunk
+				trunk di multilayer switch:
+					#int fa0/10
+					#switchport trunk encapsulation dot1q
+					#switchport mode trunk
+
+		Etherchannel Configuration with LACP mode Active.
+			membuat etherchannel, etherchannel terdapat 3 jenis:
+			-lacp terdiri 2 mode active dan passive, active mengajak menjadi etherchannel, passive menunggu untuk menjadi etherchannel
+			-pagp hanya bekerja pada cisco, terdiri 2 mode desirable dan auto, desirable mengajak, dan auto menunggu
+			-layer 3 etherchannel hanya 1 mode on, mengajak untuk menjadi etherchannel
+			note: etherchannel dapat terbentuk menggunakan mode yang saling mengajak alias active-active desirable-desirable, atau mode salah satu mengajak dan satu menunggu alias active-passive desirable-auto
+				jika keduanya menunggu maka tidak akan terbentuk etherchannel
+			membuat etherchannel lacp mode active:
+				#int ra fa0/23-24
+				#channel-group 1 mode active -> 1 sesuaikan dengan nomor port channel terserah
+		
+		Port-Security in the active access ports to allow a maximum of 3 MAC
+		addresses with violation drop packet and generate a syslog message.
+			membuat port-security maximum 3 dan drop paket dengan mengirim pesan syslog(restrict):
+				#int fa0/1
+				#switchport mode access
+				#switchport port-channel
+				#switchport port-channel maximum 3
+				#switchport port-channel mac-address sticky --> untuk mengenali mac address yang terhubung dan menyimpannya, jika menggunakan static dapat menulis manual mac address nanti cisco akan menyimpannya, jika menggunakan dynamic akan ototmatis mengenali tapi tidak tersimpan ketika cisco di matikan/restart
+				#switchport port-channel violation restrict
+
+		Routing OSPF
+			○ The routers that participate in exchanging OSPF routing information are RC1,
+				RC2, RC3, RC4, SWC-1 dan SWC-2.
+			○ Process ID: 73.
+			○ Make sure all ospf routers get the default route from RC1.
+			■ Next hop for default route RC1 is 202.132.31.30
+			○ RC1 should get network information for vlan 91, 92, 93 and 94.
+			membuat routing ospf:
+				#router ospf 73
+				#network 192.168.1.1 0.0.0.255 area 0 --> menggunakan wildcard bukan netmask
