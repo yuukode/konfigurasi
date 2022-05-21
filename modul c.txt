@@ -50,6 +50,7 @@ modul c - netdevops
 			#pip3 install flask
 			#export FLASK_APP=/opt/sample-web/main.py --> kalau di linux export kalau di windows set
 			#flask run -p 80 --> dapat diubah sesuka hati ingin port berapa
+			#deactivate untuk keluar env
 		lalu akses di browser dengan ip atau domain.
 
 	Configure Docker in the development server, make sure user ‘patah’ can use docker
@@ -57,3 +58,91 @@ modul c - netdevops
 		#sudo groupadd docker
 		#sudo gpasswd -a $USER docker
 		#newgrp docker
+	
+	Run registry server container
+	membuat local registry
+		#docker pull registry --> jika tidak diberi detail maka default menggunakan latest versi
+		#docker run -p 5000:5000 -v /mnt/registry:/var/lib/registry --name registry registry:latest
+		setelah itu jangan di ctrl+c itu registry sedang running jadi jangan ditunggu pindah workspace saja ctrl+alt+f1-10
+	Pull image python:3.8-slim from Docker Hub.
+	○ Push this image to the local registry container with the same name and tag
+		#docker pull python:3.8-slim
+		#docker tag python:3.8-slim localhost:5000/python:3.8-slim
+		#docker push localhost:5000/python:3.8-slim
+	Pull image nginx:latest from Docker Hub.
+	○ Push this image to the local registry container with name webserver:base
+		#docker pull nginx
+		#docker tag nginx:latest localhost:5000/webserver:base
+		#docker push localhost:5000/webserver:base
+	cara pull/download dari komputer lain ke local/private registry/repo-dockerrr
+		#docker pull 10.10.10.1:5000/python:3.8-slim --->ganti ip sesuai ip komputer private registry
+		#docker pull 10.10.10.1:5000/webserver:base
+		jika terdapat error karena ssl lakukan di bawah
+		#nano /etc/docker/daemon.json
+		lalu tambahkan
+		{
+			"insecure-registries" : ["10.10.10.1:5000"] --> ganti ip sesuai ip private registry
+		}
+		systemctl restart docker.service
+
+	 Use the code Python Web Application in /opt/sample-web to create a Dockerfile
+		○ Use base image python:3.8-slim
+		○ Expose port 80
+		○ Copy all code into workdir.
+		○ Use /opt/sample-web as workdir inside the container.
+		○ Save the Dockerfile in /opt/sample-web/Dockerfile
+			masuk ke venv python lalu
+			#cd /opt/sample-web/
+			#pip freeze > /opt/sample-web/requirements.txt
+			#nano /opt/sample-web/Dockerfile
+			lalu isikan
+			FROM python:3.8-slim
+			WORKDIR /opt/sample-web
+			EXPOSE 80
+			COPY . .
+			RUN pip3 install -r requirements.txt
+			ENV FLASK_APP=/opt/sample-web/main.py
+			CMD ["python3", "-m", "flask", "run", "-p","80"]
+			simpan dan keluar
+		Build the Dockerfile into image with name sampleweb:latest
+		○ Run the application from this image
+		○ Container Name : sampleweb
+		○ Configure to Listen in Port 80
+			#docker build --tag sampleweb:latest .
+			#docker run -p 80:80 --network host --name sampleweb sampleweb:latest
+		 Push the image to the local registry container with the same name and tag.
+			#docker tag sampleweb:latest localhost:5000/sampleweb:latest
+			#docker push localhost:5000/sampleweb:latest
+		Use the image nginx:latest and create a container based web server serving the file
+		public.html as specified in the appendix.
+		○ Container name : farm-1
+		○ Make it accessible via http://{ip_address}/public.html
+		○ Do not expose any port on the host.
+			#mkdir /opt/nginx-docker
+			#cd /opt/nginx-docker
+			#nano index.html
+			isikan html sesuka hati
+			#apt-get install nginx --> hanya diambil file vhostnya saja
+			#cp /etc/nginx/sites-enabled/default /opt/nginx-docker/default.conf
+			#nano /opt/nginx-docker/default.conf
+			intinya edit di bagian
+			location /public.html { --> jika hanya / maka ketika akses hanya ip atau domain saja, jika ditambahkan /public maka ketika search dapat dengan cara ipataudomain/public
+				alias /var/www/html/index.html; --> JANGAN LUPA TITIK KOMA
+			}
+			#docker network create farm1-net
+			#docker run --name farm-1 --network farm1-net -v /opt/nginx-docker:/opt/nginx-docker nginx:latest
+			pindah workspace
+			#docker exec -it farm1 /bin/bash
+			akan berjalan bash container nginx
+			#cp /opt/nginx-docker/default.conf /etc/nginx/conf.d/default.conf
+			#mkdir -p /var/www/html
+			#cp /opt/nginx-docker/index.html /var/www/html
+			#service nginx restart
+			#docker start farm1
+		
+		Use the image nginx:latest and create a container based web server serving the file
+		external.html as specified in the appendix.
+			○ Container name : farm-2
+			○ Make it accessible via http://{ip_address}/external.html
+			○ Do not expose any port on the host
+				lakukan hal yang sama seperti diatas
