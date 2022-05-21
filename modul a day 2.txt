@@ -56,5 +56,120 @@ DAY 2 - LINUX SERVICES
 		file crt dan key di isikan di vhost web server
 		convert to pfx(crt dan key jadi satu file pfx):
 			#openssl pkcs12 -export -out web.pfx -inkey web.key -in web.crt --> diimport di windows server webservice
+	untuk memasang certificate bisa menggunakan for loop di linux menggunakan bash untuk membuat vhost dengan sslengine on
 
+	
+	Basic Configuration
+	● Configure IP Address of all windows servers according to the addressing table.
+	● Determine and set gateway IP address to all windows servers.
+	● Configure hostname of all windows servers.
+	● Make all windows servers pingable from any devices.
+		untuk setting ip,gateway seperti biasa
+		setting hostname :
+			buka file explorer lalu klik kanan this pc, kemudian properties, change settings,Change..,ganti computer name sesuka hati.
+		agar windows dapat di ping bisa matikan firewall, jika tidak ingin matikan firewall lakukan:
+			-check status firewall
+			-advanced settings
+			-di bagian inbound dan outbound klik salah satu lalu ctrl+a
+			-di bagian kanan enable rule.
+	
+	File Sharing
+	● Create and Share Folder C:\backup\ in host STORAGE
+	○ Enable AD Authentication, permit user ‘Administrator’ only
+	● Create and Share Folder C:\public\ in host STORAGE
+	○ Disable Authentication, anonymous user can read and write to this folder.
+		untuk public:
+		-buat file baru lalu klik kanan
+		-klik kanan file yang akan di sharing
+		-properties, di tab sharing,share, tambahkan everyone, add, share
+		-network sharing center, lalu all network turn off password
+		-di client di run gpedit.msc lalu admin templat,network,lanman workstation,enable insecure, lalu enable, apply
+		untuk backup tidak usah tambahkan everyone
+	
+	Cross Platform iSCSI
+	● Configure iSCSI Initiator on STORAGE
+	● Connect to all 20 disks in Sabang iSCSI.
+	● Create an NTFS filesystem and mount all 20 disks to E:/, F:/, and so on in any order.
+	○ Make sure 20 extra disks is accessible via File Explorer
+		untuk iscsi initiator ada di windows server tinggal masukkan ip iscsi target
+		lalu lihat di disk management(klik kanan start) lalu buat filesystem di hardisk iscsi
+	
+	Configure Web Service HTTPS
+	● Access STORAGE and Install IIS web service.
+	● Serve web https://www.merauke.net
+	○ Serve file index.html as specified in the appendix
+	○ Use a Self-Signed Certificate from LKSN2021-CA to enable HTTPS.
+		-server manager,add role, tambahkan iis
+		jika klient menggunakan internet explorer buat certificate self signed di windows server
+		jika tidak https green pakai openssl di linux untuk buat sertifikat untuk di pasang di client dan web server agar https green,
+		untuk di windows server jadikan file crt dan key jadi satu format .pfx
+		-add website seperti biasa
 
+	Serve 25 user websites:
+	○ Make sure it is accessible using following URL https://user01.merauke.net,
+	https://user02.merauke.net, https://user03.merauke.net, and so on until
+	https://user25.merauke.net.
+	○ Use a Self-Signed Certificate from LKSN2021-CA to enable HTTPS.
+	○ Serve file users.html in the following directory:
+	■ C:\www\users\01\users.html
+	■ C:\www\users\02\users.html
+	■ C:\www\users\03\users.html
+	■ …
+	■ C:\www\users\25\users.html	
+		kita bisa menggunakan for loop powershell
+		buat folder users tidak usah for loop for loop an
+		buat folder 1 -25, kita bisa langsung mengetikkan di cmd langsung:
+			#cd www\users\
+			#for /l %i in (1,1,9) do md 0%i -> jadi 1,1,9 di awal untuk permulaan for loop,yang ditengah untuk menambah setiap loop, akhir dari batas loop
+			#for /l %i in (10,1,25) do md %i -> kenapa di buat dua kali agar sesuai soal nomor folder dari 01 - 25
+			lalu buat file users.html menggunakan for loop lagi
+			#for /l %i in (1,1,9) do echo ^<h1^> User Page ^</h1^>^<br^> > 0%i\users.html --> jangan lupa ditambahkan ^ agar tidak error ketika menggunakan simbol <>
+			#for /l %i in (10,1,25) do echo ^<h1^> User Page ^</h1^>^<br^> > %i\users.html
+			#for /l %i in (1,1,9) do echo ^<br^> >> 0%i\users.html --> jadi tambahnya satu baris satu baris jangan lupa >> agar ditambahkan di bawahnya bukan di replace
+			#for /l %i in (10,1,25) do echo ^<br^> >> %i\users.html
+			#for /l %i in (1,1,9) do echo This is the default page for users0%i websites. >> 0%i\users.html
+			#for /l %i in (10,1,25) do echo This is the default page for users%i websites. >> %i\users.html
+
+		add website menggunakan for loop cmd:
+			#cd \Windows\System32\inetsrv
+			#for /l %i in (1,1,9) do appcmd.ext add site /name:user0%i.merauke.net /bindings:https://user0%i.merauke.net*:443 /physicalpath:"C:\www\users\0%i"
+			#for /l %i in (10,1,25) do appcmd.ext add site /name:user%i.merauke.net /bindings:https://user%i.merauke.net*:443 /physicalpath:"C:\www\users\%i"
+		karena ini filenya users.html maka tambahkan di default document bukan di sites tapi di servernya (WIN-BLA BLA)
+			-Default Document, add users.html
+		dengan begitu default document setiap sites maka akan ditambahkan users.html
+		NOTE:CATATAN: UNTUK MEMPERMUDAH MEMASANG CERTIFICATE, PASANG CERTIFICATE UNTUK USER 1 - 25 OTOMATIS MENGGUNAKAN CERT YANG ADA KETIKA DI BUAT SITES,
+				  UNTUK WWW DAPAT MENGGUNAKAN CERT SENDIRI LALU CEKLIS REQUIRE SERVER NAME INDICATION AGAR SITES YANG LAIN TIDAK IKUT IKUTAN MENGGUNAKAN CA YANG SAMA.
+
+	Setup VPN
+	● Access STORAGE and Install RRAS and NPS.
+	● Configure VPN Server for Windows Client
+	○ Authenticate using username and password in Active Directory.
+	○ Permit any users in the domain to authenticate.
+	● Make sure budi-pc can connect to the VPN using previously configured Public IP
+	from NAT.○ Create the VPN in budi-pc with the name ‘Public’ so that the user can connect
+	immediately.
+	○ Access the network device and open the ports needed.
+	● Make the VPN also accessible via local IP of STORAGE from budi-pc.
+	○ Create the VPN in budi-pc with the name ‘Direct’ so that the user can connect
+	immediately.
+	○ Configure routing as needed.
+
+		-add role, remote access,fitur tambahan next,directaccess vpn ceklis,routing ceklis
+		-notification gambar bendera, lalu open getting start wizard
+		-deploy vpn only
+		-klik kanan server(WIN BLA BLA),configure enable routing remote access
+		-pilih remote access
+		-next, ip automatically,next sampai berhasil tidak ada error.
+		buat user yang akan mengakses vpn
+		-tools,computer management,local user
+		-user, tambahkan username fullname dan password, ceklis password never expires
+		-klik kanan user,properties dial in, allow access ceklis
+		
+		untuk klien:
+		-network and sharing center, set up new connection or network
+		-connect to a workplace,use my internet connection(vpn)
+		-i'll setup an internet connection later
+		-ketik ip vpn server ,dan kasih nama destination sesuka hati
+		-jika diperlukan ceklis allow other people use this connection
+		-lalu klik ikon internet di bawah, lalu klik nama destination tadi,connect
+		-masukkan username dan pass yang kita buat di computer management
