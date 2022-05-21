@@ -173,3 +173,82 @@ DAY 2 - LINUX SERVICES
 		-jika diperlukan ceklis allow other people use this connection
 		-lalu klik ikon internet di bawah, lalu klik nama destination tadi,connect
 		-masukkan username dan pass yang kita buat di computer management
+		untuk saat ini, hanya satu network yang dapat connect, beda network belum bisa.
+		
+		Active Directory and DNS
+		● Access DC and Configure AD for domain merauke.net
+		● Create a normal AD user ‘patah’ with password specified in the appendix.
+		● Create DNS Address Record for servers in merauke.net according to their
+		hostnames, for example DC.merauke.net
+		● Create DNS Record www.merauke.net pointing to IP Address of STORAGE
+		● Create 25 DNS Records for users website pointing to IP Address of STORAGE:
+		○ user01.merauke.net
+		○ user02.merauke.net
+		○ user03.merauke.net
+		○ ...
+		○ user25.merauke.net
+			install active direktori dan buat user
+			-server manager, add role, active directory domain,
+			-setup dengan ketentuan
+			-active directory user and computer,klik kanan user, new, user, lanjutkan..
+			buat a record satu persatu
+			-klik kanan forward, new zone,
+			-jika sudah klik kanan zone yang dibuat, lalu buat a record
+			-tambahkan subdomain,lalu ip address
+			buat a record dengan for loop powershell
+			#for /l %i in (1,1,9) do dnscmd . /RecordAdd merauke.net user0%i A 172.17.11.102 --> jadi setelah dnscmd .nama server bisa menggunakan titik menandakan server ini yang di pakai, lalu nama zone, lalu nama subdomain, A untuk a record lalu ip address
+			
+		Certificate Authority
+		● Access CA and Configure CA to issue required Certificates by Linux Services
+		○ Common Name : LKSN2021-CA
+		○ Do not join this server to any domain.
+		● Generate certificates required by other services with the following DNS name:
+		○ www.sabang.net
+		○ *.public.sabang.net
+		○ www.merauke.net
+		○ *.merauke.net
+		○ Save these certificates and their private keys as one pfx file in C:\cert\
+		○ Use Skills39 as export password
+		○ Use the DNS name as filename :
+		■ www.sabang.net.pfx
+		■ public.sabang.net.pfx
+		■ www.merauke.net.pfx
+		■ wildcard.merauke.net.pfx
+			To sign a CSR with your Windows Server CA
+
+    If you haven't already done so, connect to your Windows server. For more information, see Connect to Your Instance in the Amazon EC2 User Guide for Windows Instances.
+
+    On your Windows server, start Server Manager.
+
+    In the Server Manager dashboard, in the top right corner, choose Tools, Certification Authority.
+
+    				   the Certification Authority window, choose your computer name.
+
+    			From the Action menu, choose All Tasks, Submit new request.
+
+    			Select your CSR file, and then choose Open.
+
+    			In the Certification Authority window, double-click Pending Requests.
+
+		    	Select the pending request. Then, from the Action menu, choose All Tasks, Issue.
+
+    			In the Certification Authority window, double-click Issued Requests to view the signed certificate.
+
+    			(Optional) To export the signed certificate to a file, complete the following steps:
+
+        		In the Certification Authority window, double-click the certificate.
+
+		        Choose the Details tab, and then choose Copy to File.
+
+		        Follow the instructions in the Certificate Export Wizard.
+
+			You now have a Windows Server CA with AWS CloudHSM, and a valid certificate signed by the Windows Server CA.
+			akhirnya ketemu juga caranya buat cert di windows server..
+			sumber https://docs.aws.amazon.com/cloudhsm/latest/userguide/win-ca-sign-csr.html
+
+		Backup Configuration
+		● Access CA and Schedule Backup using Windows Backup.
+		● Backup folder C:\cert and all its contents to \\STORAGE\backup right away.
+		○ Create at least one empty .txt file to the backup folder
+		● Schedule the backup every day at 1 AM
+			-install windows server backup,pilih custom,add item,pilih jam, lalu pilih destination
