@@ -130,15 +130,15 @@ modul c - netdevops
 				alias /var/www/html/index.html; --> JANGAN LUPA TITIK KOMA
 			}
 			#docker network create farm1-net
-			#docker run --name farm-1 --network farm1-net -v /opt/nginx-docker:/opt/nginx-docker nginx:latest
-			pindah workspace
-			#docker exec -it farm1 /bin/bash
+			#docker container create --name farm-1 --network farm1-net -v /opt/nginx-docker:/opt/nginx-docker nginx:latest
+			#docker exec -it farm-1 /bin/bash
 			akan berjalan bash container nginx
 			#cp /opt/nginx-docker/default.conf /etc/nginx/conf.d/default.conf
 			#mkdir -p /var/www/html
 			#cp /opt/nginx-docker/index.html /var/www/html
 			#service nginx restart
-			#docker start farm1
+			#docker start farm-1
+			#docker container inspect farm-1 ---> untuk melihat ip address container
 		
 		Use the image nginx:latest and create a container based web server serving the file
 		external.html as specified in the appendix.
