@@ -1,0 +1,51 @@
+ansible automation
+	install package:
+	-sebelum menggunakan ansible untuk automation, sebaiknya lakukan:
+	#ssh-keygen
+	#ssh-copy-id root@ipsrv
+	#ssh-copy-id user@ipsrv
+	fungsinya agar ssh tidak meminta password.
+	-buat file hosts, isikan:
+	[ubuntu]
+	192.168.46.131 ansible_user=root
+	[debian]
+	192.168.46.137 ansible_user=root
+
+	-buat file site.yml
+	---
+	- hosts: ubuntu
+	  vars:
+         autor: why ---> digunakan untuk menyimpan nilai autor yang nanti dapat di panggil di file .j2, cara memanggilnya di bawah.
+	  tasks:
+	   - name: update repo
+	     apt: update_cache=yes
+	   - name: install bind
+	     apt: name=bind9 state=latest
+	   - name: ganti named conf local
+	     template:
+            src: /root/named.j2
+		dest: /etc/bind/named.conf.local
+	   - name: ganti db.nama
+	     template:
+            src: /root/db.j2
+		dest: /etc/bind/db.nama
+	     notify:
+	     - restart apache
+	     handlers:
+		service:
+		 name: bind9
+		 state: started
+	- hosts: debian
+	  tasks:
+	   - name: update repo
+	     apt: update_cache=yes
+	   - name: install apache2
+	     apt: name=apache2 state=latest
+	   - name: start apache
+	     service:
+		name: apache2
+		state: started
+	
+	#nano named.j2
+	isikan: zone "{{autor}}.net" ---> maka {{autor}} akan diisi dengan nilai variable vars pada autor yaitu why.
+	#ansible-playbook all -i /path/to/hosts site.yml
