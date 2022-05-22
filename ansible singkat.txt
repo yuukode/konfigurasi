@@ -49,3 +49,20 @@ ansible automation
 	#nano named.j2
 	isikan: zone "{{autor}}.net" ---> maka {{autor}} akan diisi dengan nilai variable vars pada autor yaitu why.
 	#ansible-playbook all -i /path/to/hosts site.yml
+
+
+routing statis dengan debian: route add -net 192.168.1.0 netmask 255.255.255.0 gw 172.16.100.2
+
+rest api dengan flask python:
+from flask import Flask
+from flask import request
+from flask import render_template
+sample = Flask(__name__)
+@sample.route("/",methods=['GET','POST','PUT', 'DELETE')
+def main():
+	if request.method == 'GET':
+		data = [{
+			'nama': 'why get',
+			'usia': '17',
+		}]
+sample.run()
